@@ -9,33 +9,31 @@ const url = 'mongodb://localhost:27017/';
 const dbname = 'conFusion';
 
 //connecting to mongodb. can only be performed when mongodb server is up and running in cmd
-mongoclient.connect(url, {useUnifiedTopology:true},(err, client) => {
-    assert.strictEqual(err, null);  //asserting that err is numm, if not error will be printed
+mongoclient.connect(url, {useUnifiedTopology:true}).then((client) => {
     console.log('Connected correctly to server');
-
-    //using the db and collection that are already created 
     const db = client.db(dbname);
 
-    dboper.insertDocument(db, {name:"Vadonut", description:"test"}, 'dishes', (result) => {
+    dboper.insertDocument(db, {name:"Vadonut", description:"test"}, 'dishes')
+    .then((result) => {
         console.log('Insert Document: \n', result.ops);
-
-        dboper.findDocuments(db, 'dishes', (docs) => {
-            console.log('Found documents: \n' , docs );
-
-            dboper.updateDocument(db, {name: "Vadonut"}, {description : "Updated Test"}, 'dishes', (result) => {
-                console.log('Updated Document: \n' , result.result);
-
-                dboper.findDocuments(db, 'dishes', (docs) => {
-                    console.log('Found documents: \n' , docs );
-
-                    db.dropCollection('dishes', (result) =>{
-                        console.log('Dropped Collection: \n' , result);
-
-                        client.close();
-                    });
-                });
-            });
-        })
-    });
-});
-//note that all the actions are nested inside each other to ensure EACH OF THEM HAPPEN ONE AFTER THE OTHER
+        return dboper.findDocuments(db, 'dishes');
+    })
+    .then((docs) => {
+        console.log('Found documents: \n' , docs );
+        return dboper.updateDocument(db, {name: "Vadonut"}, {description : "Updated Test"}, 'dishes');
+    })
+    .then((result) => {
+        console.log('Updated Document: \n' , result.result);
+        return dboper.findDocuments(db, 'dishes');
+    })
+    .then((docs) => {
+        console.log('Found documents: \n' , docs );
+        return db.dropCollection('dishes');
+    })
+    .then((result) => {
+    console.log('Dropped Collection: \n' , result);
+    client.close();
+    })
+    .catch((err) => console.log(err));
+})
+.catch((err) => console.log(err));
